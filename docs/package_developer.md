@@ -56,10 +56,10 @@ file should contain the following specification:
 ```json
 {
     "*": {
-        "*": {
+        "*": [
             "shellenv",
             "golangconfig"
-        }
+        ]
     }
 }
 ```
