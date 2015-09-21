@@ -1,7 +1,21 @@
 # golangconfig Development
 
- - [Package Coverage](https://packagecontrol.io/packages/Package%20Coverage) is
-   used to run tests and measure code coverage
+## Setup
+
+ - Install [Package Coverage](https://packagecontrol.io/packages/Package%20Coverage)
+   to run tests
+ - Install the [shellenv](https://github.com/codexns/shellenv) dependency by
+   executing `git clone --branch 1.3.0 https://github.com/codexns/shellenv`
+   inside of your `Packages/` folder
+ - Install this dependency by
+   executing `git clone https://go.googlesource.com/sublime-config golangconfig`
+   inside of your `Packages/` folder
+ - Use the Package Control command "Install Local Dependency" to install
+   `shellenv` and then `golangconfig` so they are available to the Python plugin
+   environment
+
+## General Notes
+
  - All code must pass the checks of the Sublime Text package
    [Python Flake8 Lint](https://packagecontrol.io/packages/Python%20Flake8%20Lint).
    The `python_interpreter` setting should be set to `internal`.
