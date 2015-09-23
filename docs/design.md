@@ -17,7 +17,7 @@ ideas:
  - Platform-specific settings are always higher priority than
    non-platform-specific, no matter what source they are pulled from
  - Setting names that are core to Go configuration preserve the uppercase style
-   of environmental variables. Thus the settings are named `GOPATH`, `GOROOT`,
+   of environment variables. Thus the settings are named `GOPATH`, `GOROOT`,
    `PATH`, etc.
 
 

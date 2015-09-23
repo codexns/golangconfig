@@ -1,7 +1,9 @@
 # golangconfig Package Developer Documentation
 
-`golangconfig` is primarily an API for package developers to obtain
-configuration information about a user's Go environment.
+`golangconfig` is an API for package developers to obtain configuration
+information about a user's Go environment. It is distributed as a Package
+Control dependency, and thus automatically installed when a package requiring
+it is installed by an end-user.
 
  - [Overview](#overview)
  - [Example](#example)
@@ -9,21 +11,23 @@ configuration information about a user's Go environment.
 
 ## Overview
 
-The `subprocess_info()` is the primary function that will be used in packages.
+### subprocess_info()
+
+`subprocess_info()` is the primary function that will be used in packages.
 It accepts five parameters. The first two are positional:
- 
- 1. the name of the requested executable
- 2. a list of required environmental variables
+
+ 1. the name of the requested executable, e.g. "go", "gofmt", "godoc"
+ 2. a list of required environment variables
 
 The three remaining parameters are keyword arguments:
 
  - optional_vars: a list of vars that will be pulled from project or Sublime
-   Text settings and used an environmental variables
+   Text settings and used as environment variables
  - view: a `sublime.View` object, if available
  - window: a `sublime.Window` object, if available
 
-The function returns a two-element tuple containing the path to the executable
-and a `dict` to pass via the `env=` arg of `subprocess.Popen()`.
+The function returns a two-element tuple containing the path to the requested
+executable and a `dict` to pass via the `env=` arg of `subprocess.Popen()`.
 
 The `sublime.View` and/or `sublime.Window` objects are used to obtain
 project-specific settings. These objects are available via attributes of the
@@ -33,6 +37,40 @@ The `golangconfig` package interacts with Sublime Text's settings API, which
 means that all calls must occur within the UI thread for compatiblity with
 Sublime Text 2.
 
+### setting_value()
+
+The function `setting_value()` is intended for use when fetching environment
+variables for non-subprocess usage, or for getting settings that are not
+environment variables. Obtaining the value of an individual environment variable
+may be useful when printing debug information, or using the value in an
+interactive manner with the user.
+
+The function accepts three parameters. The first is position:
+
+ 1. a unicode string of the name of the setting or environment variable
+
+The two other parameters are keyword arguments:
+
+ - view: a `sublime.View` object, if available
+ - window: a `sublime.Window` object, if available
+
+The function returns a two-element tuple containing the value of the setting
+requested, and a unicode string describing the source of the setting.
+
+If no value was found for the setting, the tuple `(None, None)` will be
+returned.
+
+If a value is found for the setting, the second element of the tuple will
+contain one of the following unicode strings:
+
+ - "project file"
+ - "project file (os-specific)"
+ - "golang.sublime-settings"
+ - "golang.sublime-settings (os-specific)"
+ - a unicode string of the path to the user's login shell
+
+This value is intended for display to the user for help in debugging.
+
 ### Errors
 
 If the executable can not be found, a `golangconfig.ExecutableError()` will be
@@ -41,9 +79,9 @@ could not be found, and `.dirs` which is a list of the dirs searched by first
 looking at the `PATH` from the Sublime Text settings, and then looking at the
 shell `PATH` value.
 
-If one of the required environmental variables is not set, an
+If one of the required environment variables is not set, an
 `golangconfig.EnvVarError()` will be raised. It has one attribute: `.missing`
-which is a list of all required environmental variables that could not be
+which is a list of all required environment variables that could not be
 found in the Sublime Text settings, or the shell environment.
 
 ### Requiring the Dependency
@@ -87,9 +125,21 @@ import golangconfig
 class MyWindowCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
-            go_path, env = golangconfig.subprocess_info(
+            go_executable_path, env_dict = golangconfig.subprocess_info(
                 'go',
                 ['GOPATH'],
+                [
+                    'GOROOT',
+                    'GOROOT_FINAL',
+                    'GOBIN',
+                    'GOOS',
+                    'GOARCH',
+                    'GORACE',
+                    'GOARM',
+                    'GO386',
+                    'GOHOSTOS',
+                    'GOHOSTARCH',
+                ],
                 window=self.window
             )
 
@@ -98,7 +148,7 @@ class MyWindowCommand(sublime_plugin.WindowCommand):
         except (golangconfig.ExecutableError) as e:
             error_message = '''
                 My Package
-               
+
                 The %s executable could not be found. Please ensure it is
                 installed and available via your PATH.
 
@@ -116,7 +166,7 @@ class MyWindowCommand(sublime_plugin.WindowCommand):
         except (golangconfig.EnvVarError) as e:
             error_message = '''
                 My Package
-               
+
                 The setting%s %s could not be found in your Sublime Text
                 settings or your shell environment.
 
@@ -137,11 +187,28 @@ class MyWindowCommand(sublime_plugin.WindowCommand):
 class MyTextCommand(sublime_plugin.TextCommand):
     def run(self):
         # This example omits exception handling for brevity
-        gofmt_path, env = golangconfig.subprocess_info(
+        gofmt_executable_path, env = golangconfig.subprocess_info(
             'gofmt',
             ['GOPATH'],
+            # GOOS, GOARCH, GO386 and GOARM are omitted from optional_vars in
+            # this example with the intent they would be provided through user
+            # interaction.
+            [
+                'GOROOT',
+                'GOROOT_FINAL',
+                'GOBIN',
+                'GORACE',
+                'GOHOSTOS',
+                'GOHOSTARCH',
+            ],
             view=self.view
         )
+
+        goos_setting = golangconfig.setting_value('GOOS', view=self.view)
+        goarch_setting = golangconfig.setting_value('GOARCH', view=self.view)
+
+        # Use the sublime API to show the user OS and ARCH options, with their
+        # values from the settings selected by default
 
 ```
 
@@ -167,11 +234,11 @@ The public API consists of the following functions:
 >         A unicode string of the executable to locate, e.g. "go" or "gofmt"
 >
 >     :param required_vars:
->         A list of unicode strings of the environmental variables that are
+>         A list of unicode strings of the environment variables that are
 >         required, e.g. "GOPATH". Obtains values from setting_value().
 >
 >     :param optional_vars:
->         A list of unicode strings of the environmental variables that are
+>         A list of unicode strings of the environment variables that are
 >         optional, but should be pulled from setting_value() if available - e.g.
 >         "GOOS", "GOARCH". Obtains values from setting_value().
 >
@@ -196,7 +263,7 @@ The public API consists of the following functions:
 >             of the directories searched.
 >         golangconfig.EnvVarError
 >             When one or more required_vars are not available. The .missing
->             attribute will be a list of the names of missing environmental
+>             attribute will be a list of the names of missing environment
 >             variables.
 >
 >     :return:
@@ -266,7 +333,7 @@ The public API consists of the following functions:
 >
 > 1. If a project is open, the project settings
 > 2. The global golang.sublime-settings file
-> 3. The user's environmental variables, as defined by their login shell
+> 3. The user's environment variables, as defined by their login shell
 >
 > If the setting is a known name, e.g. GOPATH or GOROOT, the value will be
 > checked to ensure the path exists.
@@ -318,7 +385,7 @@ The public API consists of the following functions:
 >     """
 > ```
 >
-> Uses the user's Sublime Text settings and then PATH environmental variable
+> Uses the user's Sublime Text settings and then PATH environment variable
 > as set by their login shell to find a go executable
 
 ### `debug_enabled()` function

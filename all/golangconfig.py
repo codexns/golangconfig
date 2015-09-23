@@ -37,7 +37,7 @@ _platform = {
 _NO_VALUE = '\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
 
 
-# Encoding used for environmental variables with ST2
+# Encoding used for environment variables with ST2
 _env_encoding = locale.getpreferredencoding() if sys.platform == 'win32' else 'utf-8'
 
 # Encoding used for fileystem paths with ST2
@@ -47,7 +47,7 @@ _fs_encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
 class EnvVarError(EnvironmentError):
 
     """
-    An error occurred finding one or more required environmental variables
+    An error occurred finding one or more required environment variables
     """
 
     missing = None
@@ -97,11 +97,11 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
         A unicode string of the executable to locate, e.g. "go" or "gofmt"
 
     :param required_vars:
-        A list of unicode strings of the environmental variables that are
+        A list of unicode strings of the environment variables that are
         required, e.g. "GOPATH". Obtains values from setting_value().
 
     :param optional_vars:
-        A list of unicode strings of the environmental variables that are
+        A list of unicode strings of the environment variables that are
         optional, but should be pulled from setting_value() if available - e.g.
         "GOOS", "GOARCH". Obtains values from setting_value().
 
@@ -126,7 +126,7 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
             of the directories searched.
         golangconfig.EnvVarError
             When one or more required_vars are not available. The .missing
-            attribute will be a list of the names of missing environmental
+            attribute will be a list of the names of missing environment
             variables.
 
     :return:
@@ -194,10 +194,9 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
             missing_vars.append(required_var)
 
     if missing_vars:
-        print(env)
         missing_vars = sorted(missing_vars, key=lambda s: s.lower())
         exception = EnvVarError(
-            'The following environmental variable%s currently unset: %s' %
+            'The following environment variable%s currently unset: %s' %
             (
                 's are' if len(missing_vars) > 1 else ' is',
                 ', '.join(missing_vars)
@@ -217,7 +216,7 @@ def setting_value(setting_name, view=None, window=None):
 
     1. If a project is open, the project settings
     2. The global golang.sublime-settings file
-    3. The user's environmental variables, as defined by their login shell
+    3. The user's environment variables, as defined by their login shell
 
     If the setting is a known name, e.g. GOPATH or GOROOT, the value will be
     checked to ensure the path exists.
@@ -304,7 +303,7 @@ def setting_value(setting_name, view=None, window=None):
 
 def executable_path(executable_name, view=None, window=None):
     """
-    Uses the user's Sublime Text settings and then PATH environmental variable
+    Uses the user's Sublime Text settings and then PATH environment variable
     as set by their login shell to find a go executable
 
     :param name:

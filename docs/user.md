@@ -16,7 +16,7 @@ Sublime Text configuration for all packages that utilize `golangconfig`.
 
 By default `golangconfig` tries to detect all of your Go configuration by
 invoking your login shell. It will pull in your `PATH`, `GOPATH`, and any other
-environmental variables you have set.
+environment variables you have set.
 
 ## Overriding the Environment
 
