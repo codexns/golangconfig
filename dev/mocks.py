@@ -40,7 +40,7 @@ class SublimeWindowMock():
         self._context = context
 
     def project_data(self):
-        return {'golang': self._settings}
+        return {'settings': {'golang': self._settings}}
 
     def active_view(self):
         return self._context.view
