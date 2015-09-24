@@ -4,7 +4,6 @@ from __future__ import unicode_literals, division, absolute_import, print_functi
 import os
 import threading
 import sys
-import locale
 import shellenv
 import sublime
 
@@ -35,13 +34,6 @@ _platform = {
 # object here because the value is serialized to json via the ST API. Byte
 # strings end up turning into an array of integers in ST3.
 _NO_VALUE = '\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F'
-
-
-# Encoding used for environment variables with ST2
-_env_encoding = locale.getpreferredencoding() if sys.platform == 'win32' else 'utf-8'
-
-# Encoding used for fileystem paths with ST2
-_fs_encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
 
 
 class EnvVarError(EnvironmentError):
@@ -160,8 +152,7 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
         exception.dirs = dirs
         raise exception
 
-    if py2:
-        path = path.encode(_fs_encoding)
+    path = shellenv.path_encode(path)
 
     _, env = shellenv.get_env(for_subprocess=True)
 
@@ -176,10 +167,10 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
             value, _ = setting_value(var_name, view=view, window=window)
             var_key = var_name
 
-            if py2:
-                if value is not None:
-                    value = str_cls(value).encode(_env_encoding)
-                var_key = var_key.encode(_env_encoding)
+            if value is not None:
+                value = str_cls(value)
+                value = shellenv.env_encode(value)
+            var_key = shellenv.env_encode(var_key)
 
             if value is None:
                 if var_key in env:
@@ -189,7 +180,7 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
             env[var_key] = value
 
     for required_var in required_vars:
-        var_key = required_var.encode(_env_encoding) if py2 else required_var
+        var_key = shellenv.env_encode(required_var)
         if var_key not in env:
             missing_vars.append(required_var)
 
@@ -204,6 +195,24 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
         )
         exception.missing = missing_vars
         raise exception
+
+    encoded_goroot = shellenv.env_encode('GOROOT')
+    if encoded_goroot in env:
+        unicode_sep = shellenv.path_decode(os.sep)
+        name = executable_name
+        if sys.platform == 'win32':
+            name += '.exe'
+        relative_executable_path = shellenv.path_encode('bin%s%s' % (unicode_sep, name))
+        goroot_executable_path = os.path.join(env[encoded_goroot], relative_executable_path)
+        if goroot_executable_path != path:
+            print(
+                'golangconfig: warning - binary %s was found at "%s", which is not inside of the GOROOT "%s"' %
+                (
+                    executable_name,
+                    path,
+                    shellenv.path_decode(env[encoded_goroot])
+                )
+            )
 
     return (path, env)
 
@@ -558,7 +567,7 @@ def _debug_unicode_string(name, value, source):
         A unicode string of the source of the setting
     """
 
-    if not isinstance(value, str_cls):
+    if value is not None and not isinstance(value, str_cls):
         print(
             'golangconfig: the value for %s from %s is not a string, but instead a %s' %
             (

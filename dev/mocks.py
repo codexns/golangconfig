@@ -5,13 +5,16 @@ import os
 import sys
 import shutil
 import locale
+import stat
 
 import golangconfig
 
 if sys.version_info < (3,):
     from cStringIO import StringIO
+    str_cls = unicode  # noqa
 else:
     from io import StringIO
+    str_cls = str
 
 
 class SublimeViewMock():
@@ -48,6 +51,9 @@ class SublimeWindowMock():
 
 class ShellenvMock():
 
+    _env_encoding = locale.getpreferredencoding() if sys.platform == 'win32' else 'utf-8'
+    _fs_encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
+
     _shell = None
     _data = None
 
@@ -70,6 +76,21 @@ class ShellenvMock():
 
     def get_path(self):
         return (self._shell, self._data.get('PATH', '').split(os.pathsep))
+
+    def env_encode(self, value):
+        if sys.version_info >= (3,):
+            return value
+        return value.encode(self._env_encoding)
+
+    def path_encode(self, value):
+        if sys.version_info >= (3,):
+            return value
+        return value.encode(self._fs_encoding)
+
+    def path_decode(self, value):
+        if sys.version_info >= (3,):
+            return value
+        return value.decode(self._fs_encoding)
 
 
 class SublimeSettingsMock():
@@ -119,6 +140,62 @@ class GolangConfigMock():
         self._tempdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mock_fs')
         if not os.path.exists(self._tempdir):
             os.mkdir(self._tempdir)
+
+    def replace_tempdir_env(self):
+        for key in self._env:
+            self._env[key] = self._env[key].replace(
+                '{tempdir}',
+                self.tempdir + os.sep
+            )
+
+    def replace_tempdir_view_settings(self):
+        self._replace_tempdir_settings(self._view_settings)
+
+    def replace_tempdir_window_settings(self):
+        self._replace_tempdir_settings(self._window_settings)
+
+    def replace_tempdir_sublime_settings(self):
+        self._replace_tempdir_settings(self._sublime_settings)
+
+    def _replace_tempdir_settings(self, settings_dict):
+        if settings_dict:
+            for key in settings_dict:
+                if isinstance(settings_dict[key], str_cls):
+                    settings_dict[key] = settings_dict[key].replace(
+                        '{tempdir}',
+                        self.tempdir + os.sep
+                    )
+            for platform in ['osx', 'windows', 'linux']:
+                if platform not in settings_dict:
+                    continue
+                for key in settings_dict[platform]:
+                    if isinstance(settings_dict[platform][key], str_cls):
+                        settings_dict[platform][key] = settings_dict[platform][key].replace(
+                            '{tempdir}',
+                            self.tempdir + os.sep
+                        )
+
+    def make_executable_files(self, executable_temp_files):
+        self.make_files(executable_temp_files)
+        for temp_file in executable_temp_files:
+            temp_file_path = os.path.join(self.tempdir, temp_file)
+            st = os.stat(temp_file_path)
+            os.chmod(temp_file_path, st.st_mode | stat.S_IEXEC)
+
+    def make_files(self, temp_files):
+        for temp_file in temp_files:
+            temp_file_path = os.path.join(self.tempdir, temp_file)
+            temp_file_dir = os.path.dirname(temp_file_path)
+            if not os.path.exists(temp_file_dir):
+                os.makedirs(temp_file_dir)
+            with open(temp_file_path, 'a'):
+                pass
+
+    def make_dirs(self, temp_dirs):
+        for temp_dir in temp_dirs:
+            temp_dir_path = os.path.join(self.tempdir, temp_dir)
+            if not os.path.exists(temp_dir_path):
+                os.makedirs(temp_dir_path)
 
     @property
     def view(self):

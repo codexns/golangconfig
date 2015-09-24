@@ -5,13 +5,13 @@ import unittest
 
 import sys
 import os
-import stat
 
 if sys.version_info < (3,):
     str_cls = unicode  # noqa
 else:
     str_cls = str
 
+import shellenv
 import golangconfig
 from .mocks import GolangConfigMock
 from .unittest_data import data, data_class
@@ -197,59 +197,24 @@ class GolangconfigTests(unittest.TestCase):
 
         with GolangConfigMock(shell, env, view_settings, window_settings, sublime_settings) as mock_context:
 
-            tempdir = mock_context.tempdir + os.sep
+            mock_context.replace_tempdir_env()
+            mock_context.replace_tempdir_view_settings()
+            mock_context.replace_tempdir_window_settings()
+            mock_context.replace_tempdir_sublime_settings()
 
-            # Fill in the tempdir path into all of the configuration data so that
-            # the filesystem checks succeed
-            for key in env:
-                env[key] = env[key].replace('{tempdir}', tempdir)
-
-            if view_settings:
-                for key in view_settings:
-                    if view_settings[key] is not None:
-                        view_settings[key] = view_settings[key].replace('{tempdir}', tempdir)
-                for platform in ['osx', 'windows', 'linux']:
-                    if platform not in view_settings:
-                        continue
-                    for key in view_settings[platform]:
-                        if view_settings[platform][key] is not None:
-                            view_settings[platform][key] = view_settings[platform][key].replace('{tempdir}', tempdir)
-            if window_settings:
-                for key in window_settings:
-                    window_settings[key] = window_settings[key].replace('{tempdir}', tempdir)
-                for platform in ['osx', 'windows', 'linux']:
-                    if platform not in window_settings:
-                        continue
-                    for key in window_settings[platform]:
-                        window_settings[platform][key] = window_settings[platform][key].replace('{tempdir}', tempdir)
-
-            # Set up the mock executables
-            for temp_file in executable_temp_files:
-                temp_file_path = os.path.join(mock_context.tempdir, temp_file)
-                temp_file_dir = os.path.dirname(temp_file_path)
-                if not os.path.exists(temp_file_dir):
-                    os.makedirs(temp_file_dir)
-                with open(temp_file_path, 'a'):
-                    st = os.stat(temp_file_path)
-                    os.chmod(temp_file_path, st.st_mode | stat.S_IEXEC)
-
-            # Set up the temp dirs
-            for temp_dir in temp_dirs:
-                temp_dir_path = os.path.join(mock_context.tempdir, temp_dir)
-                if not os.path.exists(temp_dir_path):
-                    os.makedirs(temp_dir_path)
+            mock_context.make_executable_files(executable_temp_files)
+            mock_context.make_dirs(temp_dirs)
 
             if isinstance(expected_result, tuple):
+                tempdir = mock_context.tempdir + os.sep
                 executable_path = expected_result[0].replace('{tempdir}', tempdir)
-                if sys.version_info < (3,):
-                    executable_path = executable_path.encode(golangconfig._fs_encoding)
+                executable_path = shellenv.path_encode(executable_path)
 
                 env_vars = {}
                 for name, value in expected_result[1].items():
                     value = value.replace('{tempdir}', tempdir)
-                    if sys.version_info < (3,):
-                        name = name.encode(golangconfig._env_encoding)
-                        value = value.encode(golangconfig._env_encoding)
+                    name = shellenv.env_encode(name)
+                    value = shellenv.env_encode(value)
                     env_vars[name] = value
 
                 expected_result = (executable_path, env_vars)
@@ -264,6 +229,7 @@ class GolangconfigTests(unittest.TestCase):
                         window=mock_context.window
                     )
                 )
+                self.assertEqual('', sys.stdout.getvalue())
 
             else:
                 with self.assertRaises(expected_result):
@@ -289,6 +255,7 @@ class GolangconfigTests(unittest.TestCase):
                 {'debug': True},
                 ['bin/go'],
                 [],
+                None,
                 ('{tempdir}bin/go', '/bin/bash'),
             ),
             (
@@ -299,9 +266,24 @@ class GolangconfigTests(unittest.TestCase):
                 },
                 {'PATH': '{tempdir}usr/bin:{tempdir}usr/local/bin'},
                 {},
+                {},
+                ['usr/local/bin/go'],
+                ['usr/bin/go'],
+                None,
+                ('{tempdir}usr/local/bin/go', 'project file'),
+            ),
+            (
+                'basic_view_settings_debug',
+                '/bin/bash',
+                {
+                    'PATH': '{tempdir}bin'
+                },
+                {'PATH': '{tempdir}usr/bin:{tempdir}usr/local/bin'},
+                {},
                 {'debug': True},
                 ['usr/local/bin/go'],
                 ['usr/bin/go'],
+                'is not executable',
                 ('{tempdir}usr/local/bin/go', 'project file'),
             ),
             (
@@ -315,57 +297,36 @@ class GolangconfigTests(unittest.TestCase):
                 {'debug': True},
                 [],
                 ['usr/bin/go'],
+                'is not executable',
                 (None, None),
             ),
         )
 
     @data('executable_path_data', True)
     def executable_path(self, shell, env, view_settings, window_settings, sublime_settings,
-                        executable_temp_files, non_executable_temp_files, expected_result):
+                        executable_temp_files, non_executable_temp_files, expected_debug, expected_result):
 
         with GolangConfigMock(shell, env, view_settings, window_settings, sublime_settings) as mock_context:
 
-            tempdir = mock_context.tempdir + os.sep
+            mock_context.replace_tempdir_env()
+            mock_context.replace_tempdir_view_settings()
+            mock_context.replace_tempdir_window_settings()
 
-            # Fill in the tempdir path into all of the configuration data so that
-            # the filesystem checks succeed
-            for key in env:
-                env[key] = env[key].replace('{tempdir}', tempdir)
-            if view_settings:
-                for key in view_settings:
-                    view_settings[key] = view_settings[key].replace('{tempdir}', tempdir)
-                for platform in ['osx', 'windows', 'linux']:
-                    if platform not in view_settings:
-                        continue
-                    for key in view_settings[platform]:
-                        view_settings[platform][key] = view_settings[platform][key].replace('{tempdir}', tempdir)
-            if window_settings:
-                for key in window_settings:
-                    window_settings[key] = window_settings[key].replace('{tempdir}', tempdir)
-                for platform in ['osx', 'windows', 'linux']:
-                    if platform not in window_settings:
-                        continue
-                    for key in window_settings[platform]:
-                        window_settings[platform][key] = window_settings[platform][key].replace('{tempdir}', tempdir)
+            mock_context.make_executable_files(executable_temp_files)
+            mock_context.make_files(non_executable_temp_files)
 
             if expected_result[0]:
+                tempdir = mock_context.tempdir + os.sep
                 expected_result = (expected_result[0].replace('{tempdir}', tempdir), expected_result[1])
-
-            # Set up the mock executables and regular files
-            for temp_file in executable_temp_files + non_executable_temp_files:
-                temp_file_path = os.path.join(mock_context.tempdir, temp_file)
-                temp_file_dir = os.path.dirname(temp_file_path)
-                if not os.path.exists(temp_file_dir):
-                    os.makedirs(temp_file_dir)
-                with open(temp_file_path, 'a'):
-                    if temp_file in executable_temp_files:
-                        st = os.stat(temp_file_path)
-                        os.chmod(temp_file_path, st.st_mode | stat.S_IEXEC)
 
             self.assertEquals(
                 expected_result,
                 golangconfig.executable_path('go', mock_context.view, mock_context.window)
             )
+            if expected_debug is None:
+                self.assertEqual('', sys.stdout.getvalue())
+            else:
+                self.assertTrue(expected_debug in sys.stdout.getvalue())
 
     def test_executable_path_path_not_string(self):
         shell = '/bin/bash'
@@ -523,6 +484,7 @@ class GolangconfigTests(unittest.TestCase):
 
         with GolangConfigMock(shell, env, view_settings, window_settings, sublime_settings) as mock_context:
             self.assertEquals(result, golangconfig.setting_value(setting, mock_context.view, mock_context.window))
+            self.assertEqual('', sys.stdout.getvalue())
 
     def test_setting_value_bytes_name(self):
         shell = '/bin/bash'
@@ -583,3 +545,27 @@ class GolangconfigTests(unittest.TestCase):
                 golangconfig.setting_value('GOPATH', mock_context.view, mock_context.window)
             )
             self.assertTrue('is not a string' in sys.stdout.getvalue())
+
+    def test_subprocess_info_goroot_executable_not_inside(self):
+        shell = '/bin/bash'
+        env = {
+            'PATH': '{tempdir}bin:{tempdir}go/bin',
+            'GOPATH': '{tempdir}workspace',
+            'GOROOT': '{tempdir}go'
+        }
+        with GolangConfigMock(shell, env, None, None, {}) as mock_context:
+            mock_context.replace_tempdir_env()
+            mock_context.replace_tempdir_view_settings()
+            mock_context.replace_tempdir_window_settings()
+
+            mock_context.make_executable_files(['bin/go', 'go/bin/go'])
+            mock_context.make_dirs(['workspace'])
+
+            golangconfig.subprocess_info(
+                'go',
+                ['GOPATH'],
+                optional_vars=['GOROOT'],
+                view=mock_context.view,
+                window=mock_context.window
+            )
+            self.assertTrue('which is not inside of the GOROOT' in sys.stdout.getvalue())
