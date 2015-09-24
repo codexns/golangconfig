@@ -454,6 +454,12 @@ def _get_most_specific_setting(name, view, window):
     if not isinstance(threading.current_thread(), threading._MainThread):
         raise RuntimeError('golangconfig.setting_value() must be called from the main thread')
 
+    if view is not None and not isinstance(view, sublime.View):
+        raise TypeError('view must be an instance of sublime.View, not %s' % _type_name(view))
+
+    if window is not None and not isinstance(window, sublime.Window):
+        raise TypeError('window must be an instance of sublime.Window, not %s' % _type_name(window))
+
     st_settings = sublime.load_settings('golang.sublime-settings')
 
     view_settings = view.settings().get('golang', {}) if view else {}

@@ -232,7 +232,7 @@ class GolangconfigTests(unittest.TestCase):
                 self.assertEqual('', sys.stdout.getvalue())
 
             else:
-                with self.assertRaises(expected_result):
+                def do_test():
                     golangconfig.subprocess_info(
                         executable_name,
                         required_vars,
@@ -240,6 +240,7 @@ class GolangconfigTests(unittest.TestCase):
                         view=mock_context.view,
                         window=mock_context.window
                     )
+                self.assertRaises(expected_result, do_test)
 
     @staticmethod
     def executable_path_data():
@@ -492,8 +493,9 @@ class GolangconfigTests(unittest.TestCase):
             'GOPATH': os.path.expanduser('~')
         }
         with GolangConfigMock(shell, env, None, None, {'debug': True}) as mock_context:
-            with self.assertRaises(TypeError):
+            def do_test():
                 golangconfig.setting_value(b'GOPATH', mock_context.view, mock_context.window)
+            self.assertRaises(TypeError, do_test)
 
     def test_setting_value_custom_type(self):
         shell = '/bin/bash'
@@ -501,8 +503,9 @@ class GolangconfigTests(unittest.TestCase):
             'GOPATH': os.path.expanduser('~')
         }
         with GolangConfigMock(shell, env, None, None, {'debug': True}) as mock_context:
-            with self.assertRaises(TypeError):
+            def do_test():
                 golangconfig.setting_value(CustomString('GOPATH'), mock_context.view, mock_context.window)
+            self.assertRaises(TypeError, do_test)
 
     def test_setting_value_incorrect_view_type(self):
         shell = '/bin/bash'
@@ -510,8 +513,9 @@ class GolangconfigTests(unittest.TestCase):
             'GOPATH': os.path.expanduser('~')
         }
         with GolangConfigMock(shell, env, None, None, {'debug': True}) as mock_context:
-            with self.assertRaises(TypeError):
+            def do_test():
                 golangconfig.setting_value('GOPATH', True, mock_context.window)
+            self.assertRaises(TypeError, do_test)
 
     def test_setting_value_incorrect_window_type(self):
         shell = '/bin/bash'
@@ -519,8 +523,9 @@ class GolangconfigTests(unittest.TestCase):
             'GOPATH': os.path.expanduser('~')
         }
         with GolangConfigMock(shell, env, None, None, {'debug': True}) as mock_context:
-            with self.assertRaises(TypeError):
+            def do_test():
                 golangconfig.setting_value('GOPATH', mock_context.view, True)
+            self.assertRaises(TypeError, do_test)
 
     def test_setting_value_gopath_not_existing(self):
         shell = '/bin/bash'

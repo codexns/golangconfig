@@ -27,7 +27,16 @@ class SublimeViewMock():
         self._context = context
 
     def settings(self):
-        return {'golang': self._settings}
+        if self.window():
+            # In Sublime Text, View objects inherit settings from the window/project
+            # unless they are explicitly set on the view, so we replicate that here
+            merged_golang_settings = self.window().project_data().get('settings', {}).get('golang', {}).copy()
+            merged_golang_settings.update(self._settings)
+        elif self._settings:
+            merged_golang_settings = self._settings.copy()
+        else:
+            merged_golang_settings = {}
+        return {'golang': merged_golang_settings}
 
     def window(self):
         return self._context.window
@@ -46,7 +55,9 @@ class SublimeWindowMock():
         return {'settings': {'golang': self._settings}}
 
     def active_view(self):
-        return self._context.view
+        if self._context.view:
+            return self._context.view
+        return SublimeViewMock({}, self._context)
 
 
 class ShellenvMock():
