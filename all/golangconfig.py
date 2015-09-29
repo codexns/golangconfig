@@ -549,7 +549,7 @@ def _type_name(value):
 
     value_cls = value.__class__
     value_module = value_cls.__module__
-    if value_module == 'builtins':
+    if value_module in set(['builtins', '__builtin__']):
         return value_cls.__name__
 
     return '%s.%s' % (value_module, value_cls.__name__)
