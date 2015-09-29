@@ -5,7 +5,7 @@
  - Install [Package Coverage](https://packagecontrol.io/packages/Package%20Coverage)
    to run tests
  - Install the [shellenv](https://github.com/codexns/shellenv) dependency by
-   executing `git clone --branch 1.3.0 https://github.com/codexns/shellenv`
+   executing `git clone --branch 1.4.1 https://github.com/codexns/shellenv`
    inside of your `Packages/` folder
  - Install this dependency by
    executing `git clone https://go.googlesource.com/sublime-config golangconfig`

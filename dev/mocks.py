@@ -75,13 +75,11 @@ class ShellenvMock():
     def get_env(self, for_subprocess=False):
         if not for_subprocess or sys.version_info >= (3,):
             return (self._shell, self._data)
-        fs_encoding = 'mbcs' if sys.platform == 'win32' else 'utf-8'
-        env_encoding = locale.getpreferredencoding() if sys.platform == 'win32' else 'utf-8'
 
-        shell = self._shell.encode(fs_encoding)
+        shell = self._shell.encode(self._fs_encoding)
         env = {}
         for name, value in self._data.items():
-            env[name.encode(env_encoding)] = value.encode(env_encoding)
+            env[name.encode(self._env_encoding)] = value.encode(self._env_encoding)
 
         return (shell, env)
 

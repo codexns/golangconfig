@@ -103,8 +103,7 @@ def subprocess_info(executable_name, required_vars, optional_vars=None, view=Non
 
     :param window:
         A sublime.Window object to use in finding project-specific settings.
-        This will only work for Sublime Text 3, and should only be passed if
-        no sublime.View object is available to pass via the view parameter.
+        This should be passed whenever available.
 
     :raises:
         RuntimeError
@@ -239,8 +238,7 @@ def setting_value(setting_name, view=None, window=None):
 
     :param window:
         A sublime.Window object to use in finding project-specific settings.
-        This will only work for Sublime Text 3, and should only be passed if
-        no sublime.View object is available to pass via the view parameter.
+        This should be passed whenever available.
 
     :raises:
         RuntimeError
@@ -325,8 +323,7 @@ def executable_path(executable_name, view=None, window=None):
 
     :param window:
         A sublime.Window object to use in finding project-specific settings.
-        This will only work for Sublime Text 3, and should only be passed if
-        no sublime.View object is available to pass via the view parameter.
+        This should be passed whenever available.
 
     :raises:
         RuntimeError
@@ -428,8 +425,7 @@ def _get_most_specific_setting(name, view, window):
 
     :param window:
         A sublime.Window object to use in finding project-specific settings.
-        This will only work for Sublime Text 3, and should only be passed if
-        no sublime.View object is available to pass via the view parameter.
+        This should be passed whenever available.
 
     :return:
         A two-element tuple.

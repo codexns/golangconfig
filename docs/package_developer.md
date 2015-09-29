@@ -175,7 +175,7 @@ class MyWindowCommand(sublime_plugin.WindowCommand):
 
             plural = 's' if len(e.missing) > 1 else ''
             setting_names = ', '.join(e.missing)
-            prompt = error_message % (plural, settings_names)
+            prompt = error_message % (plural, setting_names)
 
             if sublime.ok_cancel_dialog(prompt, 'Open Documentation'):
                 self.window.run_command(

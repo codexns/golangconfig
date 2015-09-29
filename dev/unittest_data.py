@@ -1,10 +1,5 @@
-# Written by Will Bond <will@wbond.net>
-#
-# The author or authors of this code dedicate any and all copyright interest in
-# this code to the public domain. We make this dedication for the benefit of the
-# public at large and to the detriment of our heirs and successors. We intend
-# this dedication to be an overt act of relinquishment in perpetuity of all
-# present and future rights to this code under copyright law.
+# This file is Copyright 2015, Will Bond <will@wbond.net>, licensed to Google
+# under the terms of the Google Inbound Service Agreement, signed August 15 2015
 
 
 def data(provider_method, first_param_name_suffix=False):
