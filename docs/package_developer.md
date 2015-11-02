@@ -88,7 +88,7 @@ If the `GOROOT` environment variable points to a directory that does not exist
 on disk, the `golangconfig.GoRootNotFoundError()` will be raised. It has one
 attribute `.directory` that contains a unicode string of the `GOROOT` value.
 
-If one or more of the directories specified in the `GOPATH` environment variable 
+If one or more of the directories specified in the `GOPATH` environment variable
 can not be found on disk, the `golangconfig.GoPathNotFoundError()` will be
 raised. It has one attribute `.directories`, which is a list on unicode strings
 of the directories that could not be found.

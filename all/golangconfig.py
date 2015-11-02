@@ -360,7 +360,7 @@ def setting_value(setting_name, view=None, window=None):
     if not has_multiple:
         suffix = 'value "%s" does not exist on the filesystem' % missing[0]
     elif len(missing) == 1:
-        suffix = 'contains the directory "%s" that does not exists on the filesystem' % missing[0]
+        suffix = 'contains the directory "%s" that does not exist on the filesystem' % missing[0]
     else:
         paths = ', '.join('"' + path + '"' for path in missing)
         suffix = 'contains %s directories that do not exist on the filesystem: %s' % (len(missing), paths)
