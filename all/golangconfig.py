@@ -324,6 +324,9 @@ def setting_value(setting_name, view=None, window=None):
     if setting_name not in set(['GOPATH', 'GOROOT']):
         return (setting, source)
 
+    if setting is None and source is None:
+        return (setting, source)
+
     # We add some extra processing here for known settings to improve the
     # user experience, especially around debugging
     _debug_unicode_string(setting_name, setting, source)
