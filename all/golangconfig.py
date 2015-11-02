@@ -338,8 +338,10 @@ def setting_value(setting_name, view=None, window=None):
         if os.path.exists(setting):
             return (setting, source)
 
+    has_multiple = False
     if setting_name == 'GOPATH':
         values = setting.split(os.pathsep)
+        has_multiple = len(values) > 1
         missing = []
 
         for value in values:
@@ -355,11 +357,16 @@ def setting_value(setting_name, view=None, window=None):
         e.directory = setting
         raise e
 
-    directory_plural = 'ies' if len(missing) > 1 else 'y'
-    do_plural = '' if len(missing) > 1 else 'es'
-    paths = ', '.join('"' + path + '"' for path in missing)
-    message = 'The GOPATH environment variable contains %s director%s that do%s not exist on the filesystem: %s'
-    e = GoPathNotFoundError(message % (len(missing), directory_plural, do_plural, paths))
+    if not has_multiple:
+        suffix = ' value "%s" does not exist on the filesystem'
+    elif len(missing) == 1:
+        suffix = ' contains the directory "%s" that does not exists on the filesystem' % missing[0]
+    else:
+        paths = ', '.join('"' + path + '"' for path in missing)
+        suffix = ' contains %s directories that do not exist on the filesystem: %s' % (len(missing), paths)
+
+    message = 'The GOPATH environment variable ' + suffix
+    e = GoPathNotFoundError(message)
     e.directories = missing
     raise e
 
